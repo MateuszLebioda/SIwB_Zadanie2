@@ -1,0 +1,95 @@
+---
+title: "Zadanie2"
+author: "MateuszLebioda"
+date: "19 01 2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(devtools)
+
+library("rpart.plot")
+library(easyGgplot2)
+library(rpart)
+```
+
+# Titanic
+### RMarkdown
+
+Oryginalnie zbiór TitanicMess.csv z zadanie 1 był niekompletnym zbiorem danych, który zawierał dane niepoprawne lub brakujące. Zbiór ten został oczyszczony i teraz za jego pomocą zostanie przedstawiona analiza.
+
+### Wczytanie danych:
+
+```{r}
+dane <- read.csv("./TitanicMess.csv", header=T, sep=',')
+```
+
+```{r, echo=FALSE}
+sur <- table(dane$Survived, dane$Sex)
+
+```
+
+## Założenia
+
+Do poniższej analizy wybrano trzy kluczowe parametry płeć, wiek oraz klasę według, których sklasyfikowano szansę na przeżycie. 
+
+### Dlaczego te parametry?
+
+### **Płeć**
+Atrybut płeć pozwoli podzielić zbiór na dwie duże grupy, dodatkowo intuicyjnie wydaje się, że płeć powinna mieć znaczący wpływ na przeżycie danej osoby.
+
+
+### **Wiek**
+Wiek z kolei, pozwoli podzielić zbiór na mniejsze grupy.
+
+### **Klasa**
+Klasa może okazać się pomocna jako parametr pomocniczy. 
+
+## Jak duże znaczenie w ocaleniu miała płeć?
+
+Na samym początku sprawdźmy jak dużą rolę w przeżyciu miała płeć.
+
+```{r, echo=FALSE}
+barplot(table(dane$Survived, dane$Sex), main="Osoby które zginęły w zależności od płci", legend = c("Zginęło","Przeżyło"), names=c("Kobiety","Mężczyźni"))
+```
+
+Biorąc pod uwagę powyższy wykres, można stwierdzić, że znaczna część męskiej załogi zginęła podczas katastrofy. Odwrotnie sytuacja wygląda po stronie kobiet, tutaj znaczna część załogi uszła z życiem.
+
+## Najwięcej przeżyło dzieci, dorosłych czy może osób starszych?
+
+```{r, echo=FALSE}
+surv = dane[dane$Survived == 1,]
+nSurv = dane[dane$Survived == 0,]
+
+hist(nSurv$Age,col=scales::alpha('gray',.9),border=T,  main="Liczba zgonów w zależności od wieku", xlab="Wiek", ylab="")
+hist(surv$Age,add=T,col=scales::alpha('gray20',.8),border=T)
+legend("topright", c("Zginęło", "Przeżyło"), fill=c(scales::alpha('gray',.9), scales::alpha('gray20',.8)))
+```
+
+Powyższy wykres przedstawia stosunek ocalałych do nieocalałych w zależności od wieku. Osoby powyżej 20 roku życia ale poniżej 30, wydawać by się mogło, że osoby, z założenia, najbardziej sprawne fizycznie oraz są w wieku najbardziej produktywnym ocaleją w największej liczbie. Fakty są jednak nieco inne. Jak widać właśnie w tej grupie wiekowej zaobserwować można prawie największą rozbieżność wśród ocalałych i poległych. Największą rozbieżność można natomiast zaobserwować wśród grupy wiekowej 60 - 70, natomiast osób reprezentujących daną grupę wiekową jest znacznie mniej.
+
+
+## Klasa
+
+
+```{r pressure, echo=FALSE}
+barplot(table(dane$Sex, dane$Pclass), main="Osoby które zginęły w zależności od płci", legend = c("Mężczyźni","Kobiety"), names=c("Pierwsza","Druga","Trzecia"))
+```
+
+Powyższy wykres pozwoli zobrazować proporcje w klasach ogólnie oraz uwzględniając płeć. Zauważyć można, że w każdej z klas znajdowała się podobna liczba kobiet, a biorąc pod uwagę klasę pierwszą i drugą, liczba mężczyzn także jest na podobnym poziomie. Wyjątek stanowi klasa trzecia, do której należała zdecydowana większość pasarzerów, z czego głównie płci męskiej.
+
+## Płeć, wiek i klasa
+
+Na podstawie powyższych trzech wykresów można zaobserwować jak wiek i płeć wpływały na szansę przeżycia. Na poniższym wykresie do powyższych danych zostanie dołączona **Klasa**. 
+
+```{r, echo=FALSE}
+LT=dim(dane)[1]
+train_im<- dane[1:LT,c("Survived","Pclass","Sex", "Age")]
+model_dt<- rpart(Survived ~.,data=train_im, method="class")
+rpart.plot(model_dt)
+```
+
+Powyższe drzewo decyzyjne potwierdza powyższe wykresy, co prowadzi do wniosku, że podczas katastrofy dobrze było być kobietą z trzeciej klasy. 
